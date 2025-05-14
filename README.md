@@ -2,6 +2,19 @@
 
 ## Introdução
 
+
+Empresas que lidam com grandes volumes de produtos — como distribuidores, indústrias e redes de varejo — frequentemente enfrentam o desafio de identificar produtos com base em descrições textuais imprecisas, incompletas ou variadas. Em ambientes onde os dados são inseridos manualmente, erros de digitação, abreviações e nomes comerciais diferentes podem dificultar a identificação correta dos itens em sistemas como ERPs, CRMs e plataformas de e-commerce.
+
+Neste cenário, é comum a necessidade de ferramentas que consigam:
+
+• Interpretar descrições informais ou incorretas fornecidas por usuários;
+
+• Sugerir os produtos mais semelhantes com base em similaridade semântica;
+
+• Garantir um fallback com algoritmos tradicionais (como fuzzy matching), caso a busca semântica não encontre resultados relevantes;
+
+• Ser integrável a APIs e fluxos automatizados de agentes inteligentes.
+
 Neste tutorial, você aprenderá a criar um agente de IA especializado na resolução de inconsistências em **notas fiscais de devolução de clientes**. O agente é capaz de interagir com um **servidor MCP** que fornece ferramentas de busca vetorial e recuperação de notas fiscais, permitindo que o agente encontre automaticamente a **nota fiscal de saída original da empresa** com base em informações fornecidas pelo cliente.
 
 A comunicação entre o agente e o servidor ocorre via protocolo **MCP (Multi-Agent Communication Protocol)**, garantindo modularidade, escalabilidade e integração eficiente entre serviços.
@@ -189,81 +202,97 @@ ORDER BY similaridade DESC;
 
 Nesta tarefa, vamos **complementar a busca avançada baseada em SQL** com uma nova abordagem baseada em **vetores semânticos**. Isso será especialmente útil para agentes de IA que usam embeddings (representações numéricas de frases) para comparar similaridade entre descrições de produtos — de forma mais flexível e inteligente que buscas por palavras ou fonética.
 
-Para isso, será utilizado o script Python `process_vector_products.py`, que conecta ao banco Oracle, extrai os produtos da tabela `PRODUTOS`, transforma suas descrições em vetores (embeddings), e constrói um índice vetorial utilizando FAISS.
+Para isso, será utilizado o script Python `process_vector_products.py`, que conecta ao banco Oracle, extrai os produtos da tabela `PRODUTOS`, transforma suas descrições em vetores (embeddings), e constrói um índice vetorial utilizando o próprio banco de dados Oracle.
 
 ---
 
 ### O Que o Script Faz?
 
-- Extrair todos os produtos do banco Oracle.
-- Gerar **embeddings** (vetores numéricos) a partir das descrições com um modelo pré-treinado.
-- Armazenar esses vetores em um **índice FAISS**, permitindo buscas rápidas por similaridade.
-- Salvar um **mapa de IDs** que relaciona os vetores aos produtos reais no banco de dados.
+1. **Leitura dos produtos** a partir da tabela `produtos` via `oracledb`;
+2. **Geração dos embeddings** usando o modelo `all-MiniLM-L6-v2` do pacote `sentence-transformers`;
+3. **Criação da tabela `embeddings_produtos`** para armazenar os vetores diretamente no Oracle;
+4. **Inserção ou atualização dos registros**, gravando o vetor como um BLOB binário (em formato `float32` serializado).
 
-1. Consulta de Produtos no Banco
+> **Nota:** Os embeddings são convertidos em bytes com `np.float32.tobytes()` para serem armazenados como BLOB. Para recuperar os vetores, utilize `np.frombuffer(blob, dtype=np.float32)`.
+
+Esse formato permite que futuras buscas por similaridade sejam feitas diretamente via SQL ou carregando os vetores do banco para operações com `np.dot`, `cosine_similarity` ou integração com LLMs.
+
+Este script realiza a geração de embeddings semânticos para produtos e grava esses vetores no banco de dados Oracle 23ai. A seguir, destacamos os pontos principais:
+
+---
+
+### 1. Configuração da Conexão com Oracle usando Wallet
+
+O código utiliza a biblioteca `oracledb` em modo **thin** e configura o acesso seguro usando um **Oracle Wallet**.
 
 ```python
-cursor = connection.cursor()
+os.environ["TNS_ADMIN"] = WALLET_PATH
+connection = oracledb.connect(
+    user=USERNAME,
+    password=PASSWORD,
+    dsn=DB_ALIAS,
+    ...
+)
+```
+
+---
+
+### 2. Consulta à Tabela de Produtos
+
+A tabela `produtos` contém os dados originais (ID, código e descrição). Essas descrições são usadas como base para gerar os vetores semânticos.
+
+```python
 cursor.execute("SELECT id, codigo, descricao FROM produtos")
-rows = cursor.fetchall()
 ```
 
-2. Lê todos os produtos e salva os dados em duas listas:
+---
+
+### 3. Geração de Embeddings com `sentence-transformers`
+
+O modelo `all-MiniLM-L6-v2` é utilizado para transformar as descrições dos produtos em vetores numéricos de alta dimensão.
 
 ```python
-ids = []         # Metadados de produtos (id, código, descrição)
-descricoes = []  # Apenas descrições (usadas para gerar embeddings)
-```
-
-3. Geração de Embeddings com Sentence Transformers
-
-```python
-from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('all-MiniLM-L6-v2')
-```
-
-4. Este modelo transforma descrições em vetores numéricos de 384 dimensões:
-
-```python
 embeddings = model.encode(descricoes, convert_to_numpy=True)
 ```
 
-5. Criação do Índice Vetorial com FAISS
+---
 
-```python
-import faiss
-dim = embeddings.shape[1]
-index = faiss.IndexFlatL2(dim)
-index.add(embeddings)
+### 4. Criação da Tabela de Embeddings (se não existir)
+
+A tabela `embeddings_produtos` é criada dinamicamente com os seguintes campos:
+
+- `id`: identificador do produto (chave primária)
+- `codigo`: código do produto
+- `descricao`: descrição original
+- `vetor`: BLOB contendo o vetor serializado em `float32`
+
+```sql
+CREATE TABLE embeddings_produtos (
+    id NUMBER PRIMARY KEY,
+    codigo VARCHAR2(100),
+    descricao VARCHAR2(4000),
+    vetor BLOB
+)
 ```
 
-6. Salvando o Índice e o Mapeamento de Produtos
+> Obs.: A criação usa `EXECUTE IMMEDIATE` dentro de um `BEGIN...EXCEPTION` para evitar erro se a tabela já existir.
+
+---
+
+### 5. Inserção ou Atualização via `MERGE`
+
+Para cada produto, o vetor é convertido em bytes (`float32`) e inserido ou atualizado na tabela `embeddings_produtos` usando um `MERGE INTO`.
 
 ```python
-faiss.write_index(index, "faiss_index.bin")
+vetor_bytes = vetor.astype(np.float32).tobytes()
 ```
 
-7. Grava o índice FAISS no disco. Em paralelo, salva o dicionário de produtos (ID, código e descrição) em um arquivo .pkl:
-
-```python
-with open("produto_id_map.pkl", "wb") as f:
-    pickle.dump(ids, f)
+```sql
+MERGE INTO embeddings_produtos ...
 ```
 
-### 1. Conexão com o Oracle Autonomous Database
-
-Defina as variáveis de conexão, incluindo o uso do Oracle Wallet para autenticação segura:
-
-WALLET_PATH = "/caminho/para/Wallet"
-DB_ALIAS = "oradb23ai_high"
-USERNAME = "admin"
-PASSWORD = "..."
-
-os.environ["TNS_ADMIN"] = WALLET_PATH
-
-connection = oracledb.connect(...)
-
->A variável TNS_ADMIN aponta para o diretório com os arquivos de wallet (sqlnet.ora, tnsnames.ora, etc).
+---
 
 ### Para Executar o Script
 
@@ -437,7 +466,7 @@ if __name__ == "__main__":
 Este módulo `product_search.py` implementa uma classe Python que permite buscar produtos semanticamente similares a partir de uma descrição textual, utilizando:
 
 - Embeddings da **OCI Generative AI**
-- Índices vetoriais com **FAISS**
+- Índices vetoriais com **Oracle Database 23ai**
 - Comparações fuzzy com **RapidFuzz** como fallback
 
 ---
@@ -483,7 +512,7 @@ llm = ChatOCIGenAI(
 ### Usando o CLI
 
 ```bash
-oci generative-ai model list --compartment-id <seu_compartment_id>
+  oci generative-ai model list --compartment-id <seu_compartment_id>
 ```
 
 ### Usando o Python SDK
