@@ -32,6 +32,14 @@ Antes de iniciar, certifique-se de ter os seguintes itens:
 - Biblioteca [`langchain`](https://python.langchain.com) instalada e configurada
 - Acesso ao modelo `cohere.command-r-08-2024` via OCI Generative AI
 - Bibliotecas auxiliares instaladas:
+    - `oracledb`
+    - `sentence_transformers`
+    - `numpy`
+    - `mcp-server-fastmcp`
+    - `asyncio`
+    - `langchain_core`
+    - `langchain_community`
+    - `mcp`
     - `langgraph`
     - `langchain_mcp_adapters`
     - `phoenix` (para observabilidade com OpenTelemetry)
@@ -610,6 +618,7 @@ Ao aparecer o prompt **You:**, digite:
 
     { "customer": "Cliente 43",  "description": "Harry Poter", "price": 139.55, "location": "RJ"}
 
+Perceba que o nome do livro **"Harry Potter"** está grafado errado, porém o mecanismo consegue encontrar sem problemas.
 
 ![img.png](images/img.png)
 
@@ -637,7 +646,20 @@ Desta vez, inserimos a localização, porém omitimos o preço unitário:
 
 E mesmo assim foi encontrada a NF. Isto porque o preço não é fundamental porém ajuda a fechar mais o cerco para se ter mais assertividiade.
 
+Alguns exemplos para testes:
 
+    { "customer": "Cliente 43",  "description": "Harry Poter", "price": 139.55, "location": "RJ"}
+    { "customer": "Cliente 43",  "description": "Harry Poter", "price": 139.54, "location": "RJ"}
+    { "customer": "Cliente 43",  "description": "Harry Poter", "price": 141.60, "location": "RJ"}
+    { "customer": "Cliente 43",  "description": "Harry Poter", "price": 139.54}
+    { "customer": "Cliente 43",  "description": "Harry Poter", "location": "RJ"}
+    { "customer": "Cliente 43",  "description": "Harry Poter", "location": "SP"}
+    
+    
+    { "customer": "Cliente 149",  "description": "Expresso oriente", "location": "SP"}
+    { "customer": "Cliente 149",  "description": "Expresso oriente", "location": "RJ"}
+    { "customer": "Cliente 149",  "description": "Expresso oriente"}
+    { "customer": "Cliente 149",  "description": "Expresso oriente", "price": 100.00, "location": "SP"}
 
 ## Conclusão
 
