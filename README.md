@@ -556,31 +556,38 @@ def buscar_produto_vetorizado(descricao: str) -> dict:
 Altere os parametros (Arquivo **product_search.py**) conforme a orientação abaixo:
 
 ```python
+
 class BuscaProdutoSimilar:
     def __init__(
             self,
-            faiss_index_path="faiss_index.bin",
-            id_map_path="produto_id_map.pkl",
             top_k=5,
             distancia_minima=1.0,
             model_id="cohere.embed-english-light-v3.0",
             service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
             compartment_id="ocid1.compartment.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            auth_profile="DEFAULT"
+            auth_profile="DEFAULT",
+            wallet_path="/WALLET_PATH/Wallet_oradb23ai",
+            db_alias="oradb23ai_high",
+            username="USER",
+            password="Password"
+    ):
 ```
 
 ### Parâmetros Explicados
 
 | Parâmetro          | Descrição                                                                 |
-| ------------------ | ------------------------------------------------------------------------- |
-| `faiss_index_path` | Caminho do arquivo `.bin` com o índice vetorial FAISS.                    |
-| `id_map_path`      | Arquivo `.pkl` com lista de produtos e descrições.                        |
+|--------------------|---------------------------------------------------------------------------|
 | `top_k`            | Número de sugestões retornadas.                                           |
 | `distancia_minima` | Distância máxima para considerar resultado relevante.                     |
 | `model_id`         | ID do modelo de embedding na OCI (ex: `cohere.embed-english-light-v3.0`). |
 | `service_endpoint` | Endpoint regional da OCI Generative AI.                                   |
 | `compartment_id`   | OCID do compartimento.                                                    |
 | `auth_profile`     | Nome do perfil no arquivo `~/.oci/config`.                                |
+| `wallet_path`      | Caminho para a wallet do Oracle Database 23ai.                            |
+| `db_alias`         | Alias para o banco de dados.                                              |
+| `username`         | Usuário do banco de dados.                                                |
+| `password`         | Senha do banco de dados.                                                  |
+
 
 ### 3. Configurando o Servidor MCP
 
