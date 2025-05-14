@@ -469,7 +469,7 @@ if __name__ == "__main__":
     mcp.run(transport="stdio")
 ```
 
-### 3. Busca de Produtos Similares com OCI Generative AI e FAISS
+### 3. Busca de Produtos Similares com OCI Generative AI e Banco de dados Vetorial
 
 Este módulo `product_search.py` implementa uma classe Python que permite buscar produtos semanticamente similares a partir de uma descrição textual, utilizando:
 
