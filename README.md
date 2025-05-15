@@ -73,7 +73,7 @@ Ao final deste tutorial, você será capaz de:
     "location": "RJ"
   }
 
-### 🧩 Tarefa 1: Criar um Banco de Dados Oracle Autonomous Database 23ai (Always Free)
+## Tarefa 1: Criar um Banco de Dados Oracle Autonomous Database 23ai (Always Free)
 
 Nesta etapa, você aprenderá como provisionar um banco de dados Oracle Autonomous Database 23ai na modalidade Always Free. Essa versão oferece um ambiente totalmente gerenciado, ideal para desenvolvimento, testes e aprendizado, sem custos adicionais.
 
@@ -106,7 +106,7 @@ Antes de iniciar, certifique-se de:
     - Revise as configurações e clique em **"Criar Autonomous Database"**.
     - Aguarde alguns minutos até que a instância seja provisionada e esteja disponível para uso.
 
-### Tarefa 2: Executar o Script de Criação de Tabelas no Autonomous Database
+## Tarefa 2: Executar o Script de Criação de Tabelas no Autonomous Database
 
 Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o próximo passo é preparar o banco de dados para o nosso caso de uso. Vamos executar o script SQL [script.sql](./source/script.sql) que cria três tabelas essenciais para o cenário de reconciliação de notas fiscais com agentes de IA:
 
@@ -137,7 +137,7 @@ Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o pró
       ```sql
       SELECT table_name FROM user_tables;
       ```
-### Tarefa 3: Inserir Dados de Exemplo nas Tabelas
+## Tarefa 3: Inserir Dados de Exemplo nas Tabelas
 
 Com as tabelas criadas no Autonomous Database, agora é hora de inserir dados fictícios que simularão um cenário real para a aplicação de agentes de IA. Utilizaremos dois scripts SQL:
 
@@ -591,7 +591,7 @@ class BuscaProdutoSimilar:
 
 ### 3. Configurando o Servidor MCP
 
-Assim como feito anteriormente na execução do código [process_vector_products.py](./source/process_vector_products.py), será necessária a configuração do **Oracle Wallet** para o banco de dados **23ai**. 
+Assim como feito anteriormente na execução do código [process_vector_products.py](./source/process_vector_products.py), será necessária a configuração do **Oracle Wallet** para o banco de dados **23ai**.
 
 Modifique os parâmetros conforme suas configurações:
 
