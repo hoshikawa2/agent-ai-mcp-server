@@ -108,7 +108,7 @@ Antes de iniciar, certifique-se de:
 
 ### Tarefa 2: Executar o Script de Criação de Tabelas no Autonomous Database
 
-Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o próximo passo é preparar o banco de dados para o nosso caso de uso. Vamos executar um script SQL (`script.sql`) que cria três tabelas essenciais para o cenário de reconciliação de notas fiscais com agentes de IA:
+Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o próximo passo é preparar o banco de dados para o nosso caso de uso. Vamos executar o script SQL [script.sql](./source/script.sql) que cria três tabelas essenciais para o cenário de reconciliação de notas fiscais com agentes de IA:
 
 - `PRODUTOS`
 - `NOTA_FISCAL`
@@ -125,7 +125,7 @@ Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o pró
     - Em seguida, clique em **"SQL"** para abrir o SQL Console no navegador.
 
 3. **Copie e Cole o Script SQL**:
-    - Abra o arquivo `script.sql` localmente e copie todo o conteúdo.
+    - Abra o arquivo [script.sql](./source/script.sql) localmente e copie todo o conteúdo.
     - Cole no editor do SQL Console.
 
 4. **Execute o Script**:
@@ -141,8 +141,8 @@ Agora que o Oracle Autonomous Database 23ai foi provisionado com sucesso, o pró
 
 Com as tabelas criadas no Autonomous Database, agora é hora de inserir dados fictícios que simularão um cenário real para a aplicação de agentes de IA. Utilizaremos dois scripts SQL:
 
-- `insert_produtos_livros.sql` – insere uma lista de livros como produtos, com seus respectivos EANs e descrições.
-- `notas_fiscais_mock.sql` – insere registros de notas fiscais de saída simuladas, associadas a clientes, produtos e preços.
+- [insert_produtos_livros.sql](./source/inserts_produtos_livros.sql) – insere uma lista de livros como produtos, com seus respectivos EANs e descrições.
+- [notas_fiscais_mock.sql](./source/notas_fiscais_mock.sql) – insere registros de notas fiscais de saída simuladas, associadas a clientes, produtos e preços.
 
 Esses dados serão usados pelos agentes de IA para resolver inconsistências em notas de devolução.
 
@@ -153,11 +153,11 @@ Esses dados serão usados pelos agentes de IA para resolver inconsistências em 
     - Acesse **Database Actions > SQL**.
 
 2. **Execute o Script de Produtos**:
-    - Abra o conteúdo do arquivo `insert_produtos_livros.sql` e cole no editor SQL.
+    - Abra o conteúdo do arquivo [insert_produtos_livros.sql](./source/inserts_produtos_livros.sql) e cole no editor SQL.
     - Clique em **"Run"** ou pressione `Ctrl+Enter`.
 
 3. **Execute o Script de Notas Fiscais**:
-    - Agora abra o conteúdo do arquivo `notas_fiscais_mock.sql` e cole no editor.
+    - Agora abra o conteúdo do arquivo [notas_fiscais_mock.sql](./source/notas_fiscais_mock.sql) e cole no editor.
     - Execute da mesma forma.
 
 4. **Validar os Dados Inseridos**:
@@ -210,7 +210,7 @@ ORDER BY similaridade DESC;
 
 Nesta tarefa, vamos **complementar a busca avançada baseada em SQL** com uma nova abordagem baseada em **vetores semânticos**. Isso será especialmente útil para agentes de IA que usam embeddings (representações numéricas de frases) para comparar similaridade entre descrições de produtos — de forma mais flexível e inteligente que buscas por palavras ou fonética.
 
-Para isso, será utilizado o script Python `process_vector_products.py`, que conecta ao banco Oracle, extrai os produtos da tabela `PRODUTOS`, transforma suas descrições em vetores (embeddings), e constrói um índice vetorial utilizando o próprio banco de dados Oracle.
+Para isso, será utilizado o script Python [process_vector_products.py](./source/process_vector_products.py), que conecta ao banco Oracle, extrai os produtos da tabela `PRODUTOS`, transforma suas descrições em vetores (embeddings), e constrói um índice vetorial utilizando o próprio banco de dados Oracle.
 
 ---
 
@@ -322,9 +322,9 @@ Busca vetorial é altamente eficaz para encontrar produtos mesmo quando a descri
 
 Este projeto é composto por **3 componentes principais**:
 
-1. **Agente ReAct com LangGraph + LLM da OCI** (Arquivo **main.py**)
-2. **Servidor MCP com Ferramentas para Resolução de Notas Fiscais** (Arquivo **server_nf_items.py**)
-3. **Busca de Produtos Similares com OCI Generative AI e FAISS** (Arquivo **product_search.py**)
+1. **Agente ReAct com LangGraph + LLM da OCI** (Arquivo [main.py](./source/main.py))
+2. **Servidor MCP com Ferramentas para Resolução de Notas Fiscais** (Arquivo [server_nf_items.py](./source/server_nf_items.py))
+3. **Busca de Produtos Similares com OCI Generative AI e FAISS** (Arquivo [product_search.py](./source/product_search.py))
 
 Abaixo detalhamos a funcionalidade de cada componente e destacamos os trechos mais importantes do código.
 
@@ -471,7 +471,7 @@ if __name__ == "__main__":
 
 ### 3. Busca de Produtos Similares com OCI Generative AI e Banco de dados Vetorial
 
-Este módulo `product_search.py` implementa uma classe Python que permite buscar produtos semanticamente similares a partir de uma descrição textual, utilizando:
+Este módulo [product_search.py](./source/product_search.py) implementa uma classe Python que permite buscar produtos semanticamente similares a partir de uma descrição textual, utilizando:
 
 - Embeddings da **OCI Generative AI**
 - Índices vetoriais com **Oracle Database 23ai**
@@ -553,7 +553,7 @@ def buscar_produto_vetorizado(descricao: str) -> dict:
     return buscador.buscar_produtos_similares(descricao)
 ```
 
-Altere os parametros (Arquivo **product_search.py**) conforme a orientação abaixo:
+Altere os parametros (Arquivo [product_search.py](./source/product_search.py)) conforme a orientação abaixo:
 
 ```python
 
@@ -591,7 +591,7 @@ class BuscaProdutoSimilar:
 
 ### 3. Configurando o Servidor MCP
 
-Assim como feito anteriormente na execução do código **process_vector_products.py**, será necessária a configuração do **Oracle Wallet** para o banco de dados **23ai**. 
+Assim como feito anteriormente na execução do código [process_vector_products.py](./source/process_vector_products.py), será necessária a configuração do **Oracle Wallet** para o banco de dados **23ai**. 
 
 Modifique os parâmetros conforme suas configurações:
 
@@ -615,7 +615,7 @@ Com isso, o modelo LLM e os embeddings estarão prontos para serem usados pelo a
 
 ## Tarefa 6: Testar a busca pela descrição de Produto e Nota Fiscal
 
-Executar o arquivo **main.py** conforme abaixo:
+Executar o arquivo [main.py](./source/main.py) conforme abaixo:
 
 ```python
 python main.py
