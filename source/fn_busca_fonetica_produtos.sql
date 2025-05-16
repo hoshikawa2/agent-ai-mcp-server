@@ -1,12 +1,3 @@
-CREATE TABLE produtos (
-    id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    codigo VARCHAR2(50),
-    descricao VARCHAR2(4000)
-);
-
-CREATE INDEX idx_texto_descricao ON produtos(descricao)
-INDEXTYPE IS CTXSYS.CONTEXT;
-
 
 -- DROP TYPES (se existirem)
 BEGIN
@@ -17,17 +8,6 @@ EXCEPTION
 END;
 /
 
--- Criação de um tipo de tabela para retorno da função
-CREATE OR REPLACE TYPE produto_resultado AS OBJECT (
-    codigo VARCHAR2(50),
-    descricao VARCHAR2(4000),
-    similaridade NUMBER
-);
-
-CREATE OR REPLACE TYPE produto_resultado_tab AS TABLE OF produto_resultado;
-/
-
--- Função que faz busca por palavras aproximadas por fonética ou distância
 -- Criação de um tipo de tabela para retorno da função
 CREATE OR REPLACE TYPE produto_resultado AS OBJECT (
     codigo VARCHAR2(50),
