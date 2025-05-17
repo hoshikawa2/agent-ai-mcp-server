@@ -106,9 +106,9 @@ def buscar_notas_por_criterios(cliente: str = None, estado: str = None, preco: f
     if cliente:
         query += " AND LOWER(nf.nome_cliente) LIKE LOWER(:cliente)"
         params["cliente"] = f"%{cliente}%"
-    if estado:
-        query += " AND LOWER(nf.estado) = LOWER(:estado)"
-        params["estado"] = estado
+    # if estado:
+    query += " AND LOWER(nf.estado) = LOWER(:estado)"
+    params["estado"] = estado
     if ean:
         query += " AND inf.codigo_ean = :ean"
         params["ean"] = ean
