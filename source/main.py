@@ -133,7 +133,8 @@ async def main():
                         print(f"🛠️ Executing tool: {tool.name}")
 
                     # Store new messages
-                    memory_state.messages.extend(new_messages)
+                    # memory_state.messages.extend(new_messages)
+                    memory_state.messages = []
 
                     print("Assist:", new_messages[-1].content)
 
