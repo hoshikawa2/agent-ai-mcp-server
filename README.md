@@ -188,7 +188,7 @@ A função `fn_busca_avancada` realiza:
 
 ### Etapas de Execução
 
-1. **Copie e cole o script completo no SQL Console do Autonomous Database.**
+1. **Copie e cole o script completo [fn_busca_fonetica_produtos.sql](./source/fn_busca_fonetica_produtos.sql) no SQL Console do Autonomous Database.**
     - Isso inclui:
         - Criação da tabela `produtos` (se ainda não foi feita).
         - Criação de índice de texto.
