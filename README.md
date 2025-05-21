@@ -17,9 +17,40 @@ Neste cenário, é comum a necessidade de ferramentas que consigam:
 
 Neste tutorial, você aprenderá a criar um agente de IA especializado na resolução de inconsistências em **notas fiscais de devolução de clientes**. O agente é capaz de interagir com um **servidor MCP** que fornece ferramentas de busca vetorial e recuperação de notas fiscais, permitindo que o agente encontre automaticamente a **nota fiscal de saída original da empresa** com base em informações fornecidas pelo cliente.
 
-A comunicação entre o agente e o servidor ocorre via protocolo **MCP (Multi-Agent Communication Protocol)**, garantindo modularidade, escalabilidade e integração eficiente entre serviços.
 
-Este agente utiliza como base um modelo de linguagem da Oracle Cloud Generative AI, integrando-se com ferramentas declaradas dinamicamente e gerenciadas por um servidor MCP.
+Um **MCP Server (Multi-Agent Communication Protocol Server)** é um componente de software responsável por intermediar a comunicação entre agentes inteligentes e serviços externos por meio de um protocolo padronizado de mensagens e ferramentas (tools). Ele funciona como uma ponte entre modelos de linguagem (LLMs) e APIs já existentes, permitindo que agentes de IA acessem funcionalidades específicas de sistemas legados sem a necessidade de reescrevê-los ou adaptá-los diretamente.
+
+**Como ele funciona?**
+
+O servidor MCP:
+
+•	Expõe um conjunto de ferramentas nomeadas (tools) que representam ações ou serviços que os agentes podem chamar.
+
+•	Cada ferramenta pode estar conectada a uma função de banco de dados, API REST, sistema legado, ou qualquer operação programável.
+
+•	Recebe comandos do agente (em JSON), executa o serviço correspondente e devolve uma resposta padronizada.
+
+**Uso com aplicações legadas**
+
+Aplicações legadas muitas vezes já oferecem funcionalidades acessíveis via banco de dados, arquivos ou APIs internas. Com um MCP Server, você pode:
+
+•	Encapsular chamadas a serviços REST, procedures ou SQL.
+
+•	Tornar esses serviços acessíveis a um agente via uma interface unificada de comunicação.
+
+•	Integrar sistemas antigos com arquiteturas modernas baseadas em IA conversacional e RAG.
+
+**Vantagens**
+
+•	Reaproveitamento de lógica de negócio existente.
+
+•	Não é necessário refatorar sistemas antigos.
+
+•	Permite que agentes LLM interajam com sistemas externos de forma segura e controlada.
+
+•	Facilita testes, versionamento e modularidade da integração entre IA e backend.
+
+Este agente utiliza como base um modelo de linguagem da **Oracle Cloud Generative AI**, integrando-se com ferramentas declaradas dinamicamente e gerenciadas por um servidor **MCP**.
 
 ---
 
