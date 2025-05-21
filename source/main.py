@@ -17,6 +17,8 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+# Multiple Servers
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 # 1. Inicia o Phoenix (ele abre o servidor OTLP na porta 6006)
 px.launch_app()
@@ -87,85 +89,78 @@ prompt = ChatPromptTemplate.from_messages([
     ("placeholder", "{messages}")
 ])
 
-# Local MCP Server Parameters
-server_params = StdioServerParameters(
-    command="python",
-    args=["server_nf_items.py"],
-)
-
 # Run the client with the MCP server
 async def main():
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
+    async with MultiServerMCPClient(
+            {
+                "InvoiceItemResolver": {
+                    "command": "python",
+                    "args": ["server_nf_items.py"],
+                    "transport": "stdio",
+                },
+            }
+    ) as client:
+        tools = client.get_tools()
+        if not tools:
+            print("❌ No MCP tools were loaded. Please check if the server is running.")
+            return
 
-            tools = await load_mcp_tools(session)
-            if not tools:
-                print("❌ No MCP tools were loaded. Please check if the server is running.")
-                return
+        print("🛠️ Loaded tools:", [t.name for t in tools])
 
-            print("🛠️ Loaded tools:", [t.name for t in tools])
+        # Creating the LangGraph agent with in-memory state
+        memory_state = MemoryState()
 
-            # Creating the LangGraph agent with in-memory state
-            memory_state = MemoryState()
+        agent_executor = create_react_agent(
+            model=llm,
+            tools=tools,
+            prompt=prompt,
+        )
 
-            agent_executor = create_react_agent(
-                model=llm,
-                tools=tools,
-                prompt=prompt,
-            )
+        print("🤖 READY")
+        while True:
+            query = input("You: ")
+            if query.lower() in ["quit", "exit"]:
+                break
+            if not query.strip():
+                continue
 
-            print("🤖 READY")
-            while True:
-                query = input("You: ")
-                if query.lower() in ["quit", "exit"]:
-                    break
-                if not query.strip():
-                    continue
+            memory_state.messages.append(HumanMessage(content=query))
+            try:
+                result = await agent_executor.ainvoke({"messages": memory_state.messages})
+                new_messages = result.get("messages", [])
 
-                memory_state.messages.append(HumanMessage(content=query))
-                try:
-                    result = await agent_executor.ainvoke({"messages": memory_state.messages})
-                    new_messages = result.get("messages", [])
+                # Store new messages
+                # memory_state.messages.extend(new_messages)
+                memory_state.messages = []
 
-                    # Exibe a ferramenta sendo chamada (pode ser mais específico dependendo da lógica)
-                    for tool in tools:
-                        print(f"🛠️ Executing tool: {tool.name}")
+                print("Assist:", new_messages[-1].content)
 
-                    # Store new messages
-                    # memory_state.messages.extend(new_messages)
-                    memory_state.messages = []
+                formatted_messages = prompt.format_messages()
 
-                    print("Assist:", new_messages[-1].content)
+                # Convertendo cada mensagem em string
+                formatted_messages_str = "\n".join([str(msg) for msg in formatted_messages])
+                with tracer.start_as_current_span("Server NF Items") as span:
+                    # Anexa o prompt e resposta como atributos no trace
+                    span.set_attribute("llm.prompt", formatted_messages_str)
+                    span.set_attribute("llm.response", new_messages[-1].content)
+                    span.set_attribute("llm.model", "ocigenai")
 
-                    # Quando você chama o prompt.format_messages()
-                    formatted_messages = prompt.format_messages()
+                    executed_tools = []
+                    if "intermediate_steps" in result:
+                        for step in result["intermediate_steps"]:
+                            tool_call = step.get("tool_input") or step.get("action")
+                            if tool_call:
+                                tool_name = tool_call.get("tool") or step.get("tool")
+                                if tool_name:
+                                    executed_tools.append(tool_name)
 
-                    # Convertendo cada mensagem em string
-                    formatted_messages_str = "\n".join([str(msg) for msg in formatted_messages])
-                    with tracer.start_as_current_span("Server NF Items") as span:
-                        # Anexa o prompt e resposta como atributos no trace
-                        span.set_attribute("llm.prompt", formatted_messages_str)
-                        span.set_attribute("llm.response", new_messages[-1].content)
-                        span.set_attribute("llm.model", "ocigenai")
+                    if not executed_tools:
+                        executed_tools = [t.name for t in tools]  # fallback
 
-                        # Ferramentas usadas (se possível)
-                        executed_tools = []
-                        if "intermediate_steps" in result:
-                            for step in result["intermediate_steps"]:
-                                tool_call = step.get("tool_input") or step.get("action")
-                                if tool_call:
-                                    tool_name = tool_call.get("tool") or step.get("tool")
-                                    if tool_name:
-                                        executed_tools.append(tool_name)
+                    span.set_attribute("llm.executed_tools", ", ".join(executed_tools))
 
-                        if not executed_tools:
-                            executed_tools = [t.name for t in tools]  # fallback
-
-                        span.set_attribute("llm.executed_tools", ", ".join(executed_tools))
-
-                except Exception as e:
-                    print("Error:", e)
+            except Exception as e:
+                print("Error:", e)
 
 # Run the agent with asyncio
 if __name__ == "__main__":

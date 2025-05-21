@@ -390,6 +390,34 @@ agent_executor = create_react_agent(
 )
 ```
 
+**Servidores Múltiplos de MCP**
+
+Se precisa consumir mais servidores **MCP**, ajuste a declaração abaixo:
+
+```python
+# Run the client with the MCP server
+async def main():
+    async with MultiServerMCPClient(
+            {
+                "InvoiceItemResolver": {
+                    "command": "python",
+                    "args": ["server_nf_items.py"],
+                    "transport": "stdio",
+                },
+                "InvoiceItemResolver": {
+                    "command": "python",
+                    "args": ["another_mcp_server.py"],
+                    "transport": "stdio",
+                },
+                ...
+            }
+    ) as client:
+        tools = client.get_tools()
+        if not tools:
+            print("❌ No MCP tools were loaded. Please check if the server is running.")
+            return
+```
+
 ### Prompt
 
 O prompt é fundamental para estabelecer o processo e as regras de funcionamento para o Agente de IA.
