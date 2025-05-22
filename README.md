@@ -396,10 +396,17 @@ prompt = ChatPromptTemplate.from_messages([
 * **Execução do servidor MCP local via stdio**
 
 ```python
-server_params = StdioServerParameters(
-    command="python",
-    args=["server_nf_items.py"],
-)
+# Run the client with the MCP server
+async def main():
+    async with MultiServerMCPClient(
+            {
+                "InvoiceItemResolver": {
+                    "command": "python",
+                    "args": ["server_nf_items.py"],
+                    "transport": "stdio",
+                },
+            }
+    ) as client:
 ```
 
 * **Loop principal de interação com o usuário:**
